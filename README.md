@@ -2,7 +2,7 @@
 Python script to generate index.html files with custom options
 
 
-[Demo index.html](https://glowinthedark.github.io/index-html-generator/)
+## [Demo index.html](https://glowinthedark.github.io/index-html-generator/)
 
 ![](genindex.png)
 
