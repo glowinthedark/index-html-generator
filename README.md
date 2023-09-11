@@ -1,5 +1,5 @@
 # index.html generator script
-Python script to generate index.html files with custom options
+Python script to generate index.html files with custom options inspired by [caddy's file_server browse.html](https://github.com/caddyserver/caddy/blob/master/modules/caddyhttp/fileserver/browse.html).
 
 
 ## [Demo index.html](https://glowinthedark.github.io/index-html-generator/)
