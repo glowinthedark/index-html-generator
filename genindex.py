@@ -16,6 +16,7 @@
 #
 # - Generate index.html in a directory tree.
 # - handle symlinked files and folders: displayed with custom icons
+# - optionally append '/index.html' to folder HREFs if `-d` (`--dir-append`) is specified
 # - by default only the current folder is processed unless `-r` (`--recursive`) is specified
 # - hidden files (starting with a dot) are skipped; use `--include-hidden` to force inclusion
 # - skip specific files by regex, e.g.: `--exclude-regex "(build|node_modules|target|__pycache__)"`
@@ -753,8 +754,12 @@ def process_dir(top_dir, opts):
                          </thead>
                          <tbody>
                          <tr class="clickable">
-                             <td></td>
-                             <td><a href="..">
+                             <td></td>""")
+    href_index=""
+    if opts.dir_append:
+        href_index=opts.output_file
+    index_file.write(f"""
+                             <td><a href="../{href_index}">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-corner-left-up" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
                                     <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
                                     <path d="M18 18h-6a3 3 0 0 1 -3 -3v-10l-4 4m8 0l-4 -4"></path>
@@ -838,6 +843,9 @@ def process_dir(top_dir, opts):
                 icon_xlink = EXTENSION_TYPES.get(entry.suffix.lower())
             else:
                 icon_xlink = EXTENSION_TYPES.get(entry.name)
+
+        if entry.is_dir() and opts.dir_append:
+            entry_path += opts.output_file
 
         if icon_xlink is None:
             icon_xlink = 'generic'
@@ -929,6 +937,11 @@ if __name__ == "__main__":
                         metavar='filename',
                         default=DEFAULT_OUTPUT_FILE,
                         help=f'Custom output file, by default "{DEFAULT_OUTPUT_FILE}"')
+
+    parser.add_argument('--dir-append', '-d',
+                        action='store_true',
+                        help=f'Append output file to directory href (FALSE by default)',
+                        required=False)
 
     parser.add_argument('--recursive', '-r',
                         action='store_true',
