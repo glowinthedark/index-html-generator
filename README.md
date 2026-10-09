@@ -12,13 +12,14 @@ Run `./genindex.py -h` to see the usage:
 
 ```bash
 usage: genindex.py [-h] [--filter FILTER] [--output-file filename]
-                                  [--recursive] [--include-hidden]
-                                  [--exclude-regex EXCLUDE_REGEX] [--verbose]
-                                  [top_dir]
+                   [--recursive] [--include-hidden]
+                   [--exclude-regex EXCLUDE_REGEX] [--generic-icons]
+                   [--verbose]
+                   [top_dir]
 
-DESCRIPTION: Generate directory index files (recursive is OFF by default). Start
-from current dir or from folder passed as first positional argument. Optionally
-filter by file types with --filter "*.py".
+DESCRIPTION: Generate directory index files (recursive is OFF by default).
+Start from current dir or from folder passed as first positional argument.
+Optionally filter by file types with --filter "*.py".
 
 positional arguments:
   top_dir               top folder from which to start generating indexes, use
@@ -27,14 +28,18 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   --filter FILTER, -f FILTER
-                        only include files matching glob
+                        only include files matching glob (directories are
+                        always included)
   --output-file filename, -o filename
                         Custom output file, by default "index.html"
   --recursive, -r       recursively process nested dirs (FALSE by default)
   --include-hidden, -i  include dot hidden files (FALSE by default)
   --exclude-regex EXCLUDE_REGEX, -x EXCLUDE_REGEX
                         exclude files matching regular expression
-  --verbose, -v         verbosely list every processed file
-                        WARNING: can take longer time with complex file tree
-                        structures on slow terminals
+  --generic-icons, -g   use a single generic icon for all regular files
+                        instead of per-type icons (folders and symlinks keep
+                        their own icons); produces smaller files
+  --verbose, -v         WARNING: can take longer time with complex file tree
+                        structures on slow terminals - verbosely list every
+                        processed file
 ```
