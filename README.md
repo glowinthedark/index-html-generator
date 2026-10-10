@@ -14,7 +14,7 @@ Run `./genindex.py -h` to see the usage:
 usage: genindex.py [-h] [--filter FILTER] [--output-file filename]
                    [--recursive] [--include-hidden]
                    [--exclude-regex EXCLUDE_REGEX] [--generic-icons]
-                   [--verbose]
+                   [--git-dates] [--verbose]
                    [top_dir]
 
 DESCRIPTION: Generate directory index files (recursive is OFF by default).
@@ -39,6 +39,8 @@ options:
   --generic-icons, -g   use a single generic icon for all regular files
                         instead of per-type icons (folders and symlinks keep
                         their own icons); produces smaller files
+  --git-dates, -t       if run inside a Git repository, use the most recent Git
+                        commit date if it is previous to the filesystem date
   --verbose, -v         WARNING: can take longer time with complex file tree
                         structures on slow terminals - verbosely list every
                         processed file

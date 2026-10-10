@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # ---
-# Copyright 2023 glowinthedark
+# Copyright 2023-2026 glowinthedark
+# Copyright 2026 carlosame
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,6 +21,7 @@
 # - hidden files (dot files, or the hidden attribute on Windows) are skipped; use `--include-hidden` to force inclusion
 # - skip specific files by regex, e.g.: `--exclude-regex "(build|node_modules|target|__pycache__)"`
 # - `--generic-icons` uses one icon for all regular files instead of per-type icons
+# - `--git-dates` if run inside a Git repository, uses dates from the most recent modifying commit
 
 import argparse
 import os
@@ -31,6 +33,7 @@ from fnmatch import fnmatch
 from functools import lru_cache
 from html import escape
 from urllib.parse import quote
+from git import Repo
 
 DEFAULT_OUTPUT_FILE = 'index.html'
 
@@ -158,6 +161,29 @@ def pretty_size(n):
     return f'{n >> 10 * i} {UNITS[i - 1]}'
 
 
+def last_modification_date(entry, st, repo):
+    """
+    Obtain the date of last modification of a file, using a Git repository if available.
+    """
+    modtime = st.st_mtime_ns // 1_000_000_000
+    if repo is not None:
+        try:
+            relative_path = os.path.relpath(entry, repo.working_tree_dir)
+            commit = next(repo.iter_commits(paths=relative_path, max_count=1), None)
+
+            if commit is not None:
+                # Date of the most recent commit that modified the entry
+                commit_mtime = commit.committed_datetime.timestamp()
+                # If we got the original modification time, preserve it
+                if modtime > commit_mtime:
+                    modtime = commit_mtime
+
+        except Exception as e:
+            print(f"Warning: {e}")
+
+    return modtime
+
+
 @lru_cache(maxsize=4096)  # sibling files often share an mtime second
 def format_mtime(t):
     """(ISO 8601, locale) local-time strings, or ('', '-') when out of the platform's range."""
@@ -202,7 +228,7 @@ def render(title, icons, rows):
 '''
 
 
-def process_dir(path, opts):
+def process_dir(path, opts, repo):
     """Write the index file of `path`; return the subdirectories to descend into."""
     output = opts.output_file.lower()
     entries, subdirs, icons = [], [], {'go-up'}
@@ -243,7 +269,7 @@ def process_dir(path, opts):
                         if stat.S_ISREG(st.st_mode):
                             size = st.st_size
                             size_pretty = pretty_size(size)
-                        iso, human = format_mtime(st.st_mtime_ns // 1_000_000_000)
+                        iso, human = format_mtime(last_modification_date(e, st, repo))
                 except OSError as err:
                     log('ERROR accessing file:', err, e.path)
                     continue
@@ -279,6 +305,15 @@ def type_dir(s):
     return os.path.abspath(s)
 
 
+def git_repo(opts):
+    if opts.git_dates:
+        try:
+            return Repo(opts.top_dir, search_parent_directories=True)
+        except (Exception):
+            pass
+    return None
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description='''DESCRIPTION:
     Generate directory index files (recursive is OFF by default).
@@ -299,12 +334,16 @@ def main(argv=None):
     parser.add_argument('--generic-icons', '-g', action='store_true',
                         help='use a single generic icon for all regular files instead of per-type icons '
                              '(folders and symlinks keep their own icons); produces smaller files')
+    parser.add_argument('--git-dates', '-t', action='store_true',
+                        help='if run inside a Git repository, use Git commit dates if previous to fs date')
     parser.add_argument('--verbose', '-v', action='store_true',
                         help='WARNING: can take longer time with complex file tree structures on slow terminals -'
                              ' verbosely list every processed file')
     opts = parser.parse_args(argv)
     if os.path.basename(opts.output_file) != opts.output_file or opts.output_file in ('', '.', '..'):
         parser.error(f'--output-file must be a plain file name: {opts.output_file!r}')
+
+    repo = git_repo(opts)
 
     # iterative DFS: no recursion limit on deep trees; `seen` breaks symlink cycles
     pending, seen = [opts.top_dir], set()
@@ -321,7 +360,7 @@ def main(argv=None):
         seen.add(key)
         if opts.verbose:
             log(f'Traversing dir {path}')
-        pending.extend(reversed(process_dir(path, opts)))
+        pending.extend(reversed(process_dir(path, opts, repo)))
 
 
 if __name__ == '__main__':
